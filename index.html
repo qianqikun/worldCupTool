@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026美加墨世界杯赛程及亚盘欧指数据查看系统</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="专业级2026年美加墨世界杯完整赛程表，支持实时查看各大主流博彩公司欧指、让球亚盘、大小球即时赔率与水位，独家提供24小时赔率走势图表及AI智能数据分析。">
+  <meta name="keywords" content="2026世界杯,世界杯赛程表,世界杯赔率,亚洲盘口,欧洲指数,赔率走势,The Odds API">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 背景粒子光晕 (科技感氛围) -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <!-- 应用容器 -->
+  <div class="app-container">
+    
+    <!-- 头部导航与操作区 -->
+    <header class="main-header">
+      <div class="brand">
+        <div class="logo-container">
+          <i data-lucide="trophy" class="logo-icon animate-pulse"></i>
+        </div>
+        <div class="brand-text">
+          <h1>FIFA WORLD CUP 2026</h1>
+          <p>赛程及亚盘欧指数据分析系统</p>
+        </div>
+      </div>
+      
+      <!-- 倒计时板 -->
+      <div class="countdown-panel" id="countdownPanel">
+        <span class="countdown-label">距离揭幕战倒计时</span>
+        <div class="countdown-timer">
+          <div class="time-block"><span id="days">00</span><label>天</label></div>
+          <div class="time-divider">:</div>
+          <div class="time-block"><span id="hours">00</span><label>时</label></div>
+          <div class="time-divider">:</div>
+          <div class="time-block"><span id="minutes">00</span><label>分</label></div>
+          <div class="time-divider">:</div>
+          <div class="time-block"><span id="seconds">00</span><label>秒</label></div>
+        </div>
+      </div>
+
+      <!-- 右上角配置栏 -->
+      <div class="header-actions">
+        <button class="btn btn-icon btn-glass" id="btnOpenApiConfig" title="API配置">
+          <i data-lucide="key-round"></i>
+          <span>API 配置</span>
+        </button>
+        <div class="api-status-badge" id="apiStatusBadge">
+          <span class="dot" style="background: var(--color-red); box-shadow: var(--glow-red);"></span>
+          <span class="status-text">暂无赔率数据 (请配置 API)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 过滤器与控制栏 -->
+    <section class="filter-section">
+      <!-- 阶段过滤 -->
+      <div class="filter-group">
+        <span class="filter-title"><i data-lucide="layout-grid"></i> 赛事阶段</span>
+        <div class="filter-buttons scrollbar-none" id="stageFilters">
+          <button class="btn btn-filter active" data-stage="all">全部比赛</button>
+          <button class="btn btn-filter" data-stage="小组赛">小组赛</button>
+          <button class="btn btn-filter" data-stage="32强赛">32强赛</button>
+          <button class="btn btn-filter" data-stage="16强赛">16强赛</button>
+          <button class="btn btn-filter" data-stage="1/4决赛">1/4决赛</button>
+          <button class="btn btn-filter" data-stage="半决赛">半决赛</button>
+          <button class="btn btn-filter" data-stage="决赛">三四名/决赛</button>
+        </div>
+      </div>
+
+      <!-- 小组筛选 (仅在选择小组赛阶段时呈现) -->
+      <div class="filter-group" id="groupFilterWrapper" style="display: none;">
+        <span class="filter-title"><i data-lucide="users"></i> 小组选择</span>
+        <div class="filter-buttons group-buttons scrollbar-none" id="groupFilters">
+          <button class="btn btn-circle active" data-group="all">全</button>
+          <button class="btn btn-circle" data-group="A组">A</button>
+          <button class="btn btn-circle" data-group="B组">B</button>
+          <button class="btn btn-circle" data-group="C组">C</button>
+          <button class="btn btn-circle" data-group="D组">D</button>
+          <button class="btn btn-circle" data-group="E组">E</button>
+          <button class="btn btn-circle" data-group="F组">F</button>
+          <button class="btn btn-circle" data-group="G组">G</button>
+          <button class="btn btn-circle" data-group="H组">H</button>
+          <button class="btn btn-circle" data-group="I组">I</button>
+          <button class="btn btn-circle" data-group="J组">J</button>
+          <button class="btn btn-circle" data-group="K组">K</button>
+          <button class="btn btn-circle" data-group="L组">L</button>
+        </div>
+      </div>
+
+      <!-- 搜索、排序与数据状态 -->
+      <div class="search-sort-bar">
+        <!-- 搜索输入框 -->
+        <div class="search-box">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="searchInput" placeholder="搜索球队名称 (如 巴西、阿根廷)...">
+        </div>
+        
+        <!-- 异常波动过滤 -->
+        <label class="toggle-container">
+          <input type="checkbox" id="fluctuationToggle">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i data-lucide="trending-up"></i> 只看赔率异常波动</span>
+        </label>
+
+        <!-- 排序方式 -->
+        <div class="sort-selector">
+          <i data-lucide="arrow-up-down"></i>
+          <select id="sortSelect">
+            <option value="time-asc">按开赛时间 (从早到晚)</option>
+            <option value="time-desc">按开赛时间 (从晚到早)</option>
+            <option value="rank-diff">按实力悬殊 (排名差最大)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 日期轴过滤器 -->
+      <div class="date-slider-wrapper">
+        <button class="btn-arrow btn-arrow-left" id="dateScrollLeft"><i data-lucide="chevron-left"></i></button>
+        <div class="date-slider scrollbar-none" id="dateSlider">
+          <button class="btn btn-date active" data-date="all">
+            <span>全部</span>
+            <label>ALL</label>
+          </button>
+          <!-- 日期按钮由 JS 动态生成 -->
+        </div>
+        <button class="btn-arrow btn-arrow-right" id="dateScrollRight"><i data-lucide="chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- 赛事列表展示 -->
+    <main class="main-content">
+      <div class="results-header">
+        <p class="results-count" id="resultsCount">正在加载赛程...</p>
+      </div>
+
+      <div class="match-grid" id="matchGrid">
+        <!-- 比赛卡片由 JS 动态渲染 -->
+      </div>
+      
+      <!-- 缺省状态 -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <i data-lucide="frown" class="empty-icon"></i>
+        <h3>未找到符合筛选条件的比赛</h3>
+        <p>请尝试重置过滤器或输入其他搜索词</p>
+        <button class="btn btn-glass" id="btnResetFilters">重置过滤器</button>
+      </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="main-footer">
+      <p>© 2026 FIFA World Cup Match Center & Betting Index Analyzer. All rights reserved.</p>
+      <p class="footer-note">声明：赔率数据仅供参考，不构成任何投注建议。请理性对待体育赛事。</p>
+    </footer>
+  </div>
+
+  <!-- 1. API Key 配置模态框 (Modal) -->
+  <div class="modal-overlay" id="apiModal" style="display: none;">
+    <div class="modal-card api-modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="settings"></i> The Odds API 配置</h2>
+        <button class="btn-close" id="btnCloseApiModal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="description">本系统直接对接 The Odds API 数据源。配置有效的 API Key 后，系统将联网同步最新的欧洲指数（欧指）和赔率波动数据。</p>
+        
+        <div class="form-group">
+          <label for="apiKeyInput">The Odds API Key</label>
+          <div class="input-wrapper">
+            <i data-lucide="key" class="input-icon"></i>
+            <input type="password" id="apiKeyInput" placeholder="输入您的 API Key (如: a1b2c3d4e5f6...)">
+          </div>
+        </div>
+
+        <div class="api-guide">
+          <h4>如何获取免费的 API Key？</h4>
+          <ol>
+            <li>访问官方网站：<a href="https://the-odds-api.com/" target="_blank" rel="noopener">the-odds-api.com <i data-lucide="external-link" class="inline-icon"></i></a></li>
+            <li>点击 <strong>"Get Free API Key"</strong> 进行免费注册。</li>
+            <li>您将获得每月 <strong>500 次</strong> 的免费请求额度，足够个人调试使用。</li>
+          </ol>
+        </div>
+
+        <div class="api-test-result" id="apiTestResult" style="display: none;">
+          <!-- 用于提示测试连接状态 -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnClearApiKey">清除 Key</button>
+        <div class="footer-buttons-right">
+          <button class="btn btn-glass" id="btnTestApiKey">测试并连接</button>
+          <button class="btn btn-primary" id="btnSaveApiKey">保存配置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 比赛详情与盘口赔率模态框 (Modal) -->
+  <div class="modal-overlay" id="detailModal" style="display: none;">
+    <div class="modal-card detail-modal-card scrollbar-none">
+      
+      <!-- 模态框头部 -->
+      <div class="modal-header">
+        <div class="header-match-info">
+          <span class="stage-tag" id="modalStageTag">小组赛 - A组</span>
+          <span class="stadium-info" id="modalStadiumInfo"><i data-lucide="map-pin"></i> 墨西哥城 - 阿兹特克体育场</span>
+        </div>
+        <button class="btn-close" id="btnCloseDetailModal"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- 模态框主体 -->
+      <div class="modal-body">
+        
+        <!-- 两队实力对比顶图 -->
+        <div class="teams-versus-banner">
+          <div class="versus-team team-home">
+            <span class="vs-flag" id="modalHomeFlag">🇲🇽</span>
+            <h3 id="modalHomeName">墨西哥</h3>
+            <span class="vs-rank" id="modalHomeRank">FIFA 15</span>
+          </div>
+          <div class="versus-center">
+            <span class="vs-time" id="modalMatchTime">6月11日 13:00</span>
+            <div class="vs-divider">VS</div>
+            <span class="vs-status" id="modalMatchStatus">未开始</span>
+          </div>
+          <div class="versus-team team-away">
+            <span class="vs-flag" id="modalAwayFlag">🇪🇨</span>
+            <h3 id="modalAwayName">厄瓜多尔</h3>
+            <span class="vs-rank" id="modalAwayRank">FIFA 31</span>
+          </div>
+        </div>
+
+        <!-- 标签页导航 -->
+        <div class="modal-tabs">
+          <button class="tab-btn active" data-tab="odds-data">赔率数据对比</button>
+          <button class="tab-btn" data-tab="trend-chart">24小时变化趋势</button>
+          <button class="tab-btn" data-tab="ai-analysis">AI 智能指数预测</button>
+        </div>
+
+        <!-- 标签内容 1: 赔率数据对比 -->
+        <div class="tab-content active" id="tab-odds-data">
+          <!-- 欧洲独赢赔率 (欧指) -->
+          <div class="data-block">
+            <div class="block-title">
+              <h3><i data-lucide="bar-chart-3"></i> 欧洲指数 (1X2 Odds)</h3>
+              <span class="block-subtitle">初盘对比即时盘，反映市场胜平负概率倾向</span>
+            </div>
+            <div class="table-responsive">
+              <table class="odds-table">
+                <thead>
+                  <tr>
+                    <th>博彩公司</th>
+                    <th>盘口状态</th>
+                    <th>主胜 (3)</th>
+                    <th>平局 (1)</th>
+                    <th>客胜 (0)</th>
+                    <th>返还率</th>
+                  </tr>
+                </thead>
+                <tbody id="euroOddsTableBody">
+                  <!-- JS 动态载入 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 亚洲让球盘 (亚盘) -->
+          <div class="data-block">
+            <div class="block-title">
+              <h3><i data-lucide="scale"></i> 亚洲让球盘 (Handicap)</h3>
+              <span class="block-subtitle">根据两队实力差进行让球，消除实力不对称</span>
+            </div>
+            <div class="table-responsive">
+              <table class="odds-table">
+                <thead>
+                  <tr>
+                    <th>博彩公司</th>
+                    <th>盘口状态</th>
+                    <th>主队水位</th>
+                    <th>让球盘口</th>
+                    <th>客队水位</th>
+                    <th>返还率</th>
+                  </tr>
+                </thead>
+                <tbody id="asianOddsTableBody">
+                  <!-- JS 动态载入 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 大小球盘口 (Over/Under) -->
+          <div class="data-block">
+            <div class="block-title">
+              <h3><i data-lucide="activity"></i> 进球数大小球 (Over/Under)</h3>
+              <span class="block-subtitle">预测两队全场总进球数是否大于或小于盘口值</span>
+            </div>
+            <div class="table-responsive">
+              <table class="odds-table">
+                <thead>
+                  <tr>
+                    <th>博彩公司</th>
+                    <th>盘口状态</th>
+                    <th>大球水位</th>
+                    <th>进球数盘口</th>
+                    <th>小球水位</th>
+                    <th>返还率</th>
+                  </tr>
+                </thead>
+                <tbody id="ouOddsTableBody">
+                  <!-- JS 动态载入 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 标签内容 2: 24小时变化趋势 -->
+        <div class="tab-content" id="tab-trend-chart">
+          <div class="chart-controls">
+            <button class="btn btn-glass btn-sm active" id="btnShowEuroChart">欧指胜平负走势</button>
+            <button class="btn btn-glass btn-sm" id="btnShowAsianChart">亚盘水位走势</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="oddsTrendChart"></canvas>
+          </div>
+          <div class="chart-legend-tip">
+            <p><i data-lucide="info"></i> 提示：坐标横轴为距赛前的时间，折线波动代表市场资金对相应赛果的热度及庄家控赔动作。</p>
+          </div>
+        </div>
+
+        <!-- 标签内容 3: AI 智能指数预测 -->
+        <div class="tab-content" id="tab-ai-analysis">
+          <div class="ai-report-container">
+            <div class="ai-header">
+              <div class="ai-badge">
+                <i class="ai-icon animate-pulse" data-lucide="sparkles"></i>
+                <span>DeepMind AI 模拟分析</span>
+              </div>
+              <div class="confidence-meter">
+                <span>预测信心值：</span>
+                <div class="bar-bg"><div class="bar-fill" id="aiConfidenceBar" style="width: 75%;"></div></div>
+                <span id="aiConfidenceText">75%</span>
+              </div>
+            </div>
+            
+            <div class="ai-body">
+              <div class="analysis-card card-matchup">
+                <h4><i data-lucide="shield-alert"></i> 实力与交锋分析</h4>
+                <p id="aiMatchupText">分析加载中...</p>
+              </div>
+              
+              <div class="analysis-card card-market">
+                <h4><i data-lucide="trending-up"></i> 赔率与市场盘面分析</h4>
+                <p id="aiMarketText">盘口数据计算中...</p>
+              </div>
+
+              <div class="analysis-card card-verdict">
+                <h4><i data-lucide="check-circle-2"></i> 赛果推荐与让球解析</h4>
+                <div class="verdict-grid">
+                  <div class="verdict-item">
+                    <span class="label">独赢方向</span>
+                    <span class="val highlight" id="aiVerdict1x2">阿根廷 胜</span>
+                  </div>
+                  <div class="verdict-item">
+                    <span class="label">盘口推荐</span>
+                    <span class="val highlight" id="aiVerdictHandicap">阿根廷 (-0.75) 输半赢全</span>
+                  </div>
+                  <div class="verdict-item">
+                    <span class="label">进球预测</span>
+                    <span class="val highlight" id="aiVerdictGoals">大球 (2.5)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Data layer -->
+  <script src="data.js"></script>
+  <!-- Control script -->
+  <script src="app.js"></script>
+</body>
+</html>
