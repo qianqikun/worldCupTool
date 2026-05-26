@@ -57,6 +57,26 @@ function generateFlagFromId(teamId) {
   return String.fromCodePoint(first) + String.fromCodePoint(second);
 }
 
+/**
+ * 将 UTC ISO 时间字符串转换为北京时间（UTC+8）的 Date 对象
+ * 无论用户系统时区是什么，始终显示北京时间
+ */
+function toCSTDate(isoString) {
+  const utcMs = new Date(isoString).getTime();
+  const cstMs = utcMs + 8 * 60 * 60 * 1000; // +8h
+  return new Date(cstMs);
+}
+
+/** 获取北京时间的日期字符串 YYYY-MM-DD（用于日期轴和日期筛选对比） */
+function getCSTDateStr(isoString) {
+  const d = toCSTDate(isoString);
+  // 使用 UTC 方法读取（因为已经手动偏移过了）
+  const y   = d.getUTCFullYear();
+  const mon = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${mon}-${day}`;
+}
+
 /** 根据英文球队名查找或构建球队对象 */
 function resolveTeam(engName) {
   const id = TEAM_NAME_MAPPING[engName];
@@ -182,13 +202,17 @@ function renderDateSlider() {
     dateSlider.innerHTML = '<button class="btn btn-date active" data-date="all"><span>全部</span><label>ALL</label></button>';
   }
 
-  const dates = [...new Set(matches.map(m => m.time.split('T')[0]))].sort();
+  // 用北京时间日期字符串去重，避免 UTC 与北京时间跨日问题
+  const dates = [...new Set(matches.map(m => getCSTDateStr(m.time)))].sort();
   dates.forEach(dStr => {
-    const dateObj = new Date(dStr);
-    const month = dateObj.getMonth() + 1;
-    const date  = dateObj.getDate();
+    // dStr 格式为 YYYY-MM-DD，直接解析为北京时间
+    const [, monStr, dayStr] = dStr.split('-');
+    const month = parseInt(monStr, 10);
+    const date  = parseInt(dayStr, 10);
+    // 计算星期：以北京时间 00:00 构建对应 UTC 偏移后的 Date
+    const dateForWeek = new Date(`${dStr}T00:00:00+08:00`);
     const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    const dayOfWeek = dayNames[dateObj.getDay()];
+    const dayOfWeek = dayNames[dateForWeek.getDay()];
 
     let specialLabel = `${month}.${date}`;
     if (month === 6 && date === 11) specialLabel = '6.11 揭幕';
@@ -196,7 +220,7 @@ function renderDateSlider() {
 
     const btn = document.createElement('button');
     btn.className = 'btn btn-date';
-    btn.dataset.date = dStr;
+    btn.dataset.date = dStr;  // 存储北京时间日期字符串
     btn.innerHTML = `<span>${specialLabel}</span><label>${dayOfWeek}</label>`;
     dateSlider.appendChild(btn);
   });
@@ -407,7 +431,8 @@ function filterAndRenderMatches() {
     }
     if (activeFilters.group !== 'all' && m.group !== activeFilters.group) return false;
     if (activeFilters.date !== 'all') {
-      if (m.time.split('T')[0] !== activeFilters.date) return false;
+      // 用北京时间日期对比，与日期轴保持一致
+      if (getCSTDateStr(m.time) !== activeFilters.date) return false;
     }
     if (activeFilters.search) {
       const q = activeFilters.search;
@@ -516,12 +541,13 @@ function renderMatchGrid(filteredMatches) {
     const isAlert = checkFluctuation(m);
     card.className = `match-card ${isAlert ? 'wave-alert' : ''}`;
 
-    const dateObj = new Date(m.time);
-    const mStr   = dateObj.getMonth() + 1;
-    const dStr   = dateObj.getDate();
-    const hStr   = String(dateObj.getHours()).padStart(2, '0');
-    const minStr = String(dateObj.getMinutes()).padStart(2, '0');
-    const formattedTime = `${mStr}月${dStr}日 ${hStr}:${minStr}`;
+    // 统一转换为北京时间（UTC+8）显示
+    const cstDate = toCSTDate(m.time);
+    const mStr    = cstDate.getUTCMonth() + 1;
+    const dStr    = cstDate.getUTCDate();
+    const hStr    = String(cstDate.getUTCHours()).padStart(2, '0');
+    const minStr  = String(cstDate.getUTCMinutes()).padStart(2, '0');
+    const formattedTime = `${mStr}月${dStr}日 ${hStr}:${minStr} (北京时间)`;
 
     // 欧指摘要
     let euroHtml = '';
@@ -615,9 +641,10 @@ function openDetailModal(match) {
   document.getElementById('modalAwayName').innerText = match.away.name;
   document.getElementById('modalAwayRank').innerText = match.away.rank ? `FIFA ${match.away.rank}` : '--';
 
-  const dateObj = new Date(match.time);
+  // 统一转换为北京时间显示
+  const cstDate = toCSTDate(match.time);
   document.getElementById('modalMatchTime').innerText =
-    `${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+    `${cstDate.getUTCMonth() + 1}月${cstDate.getUTCDate()}日 ${String(cstDate.getUTCHours()).padStart(2,'0')}:${String(cstDate.getUTCMinutes()).padStart(2,'0')} (北京时间)`;
 
   const statusMap = { scheduled: '未开始', live: '进行中', finished: '已结束' };
   document.getElementById('modalMatchStatus').innerText = statusMap[match.status] || '未开始';
