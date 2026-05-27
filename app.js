@@ -157,6 +157,24 @@ document.addEventListener('DOMContentLoaded', () => {
   startCountdown();
   bindEvents();
   loadApiKey();   // 有 Key → 自动拉取；无 Key → 显示提示
+
+  // 监听模态框显示状态，锁定/解锁 body 滚动
+  const modalObserver = new MutationObserver(() => {
+    const apiModal = document.getElementById('apiModal');
+    const detailModal = document.getElementById('detailModal');
+    const apiVisible = apiModal && apiModal.style.display === 'flex';
+    const detailVisible = detailModal && detailModal.style.display === 'flex';
+    if (apiVisible || detailVisible) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+  });
+
+  const apiModal = document.getElementById('apiModal');
+  const detailModal = document.getElementById('detailModal');
+  if (apiModal) modalObserver.observe(apiModal, { attributes: true, attributeFilter: ['style'] });
+  if (detailModal) modalObserver.observe(detailModal, { attributes: true, attributeFilter: ['style'] });
 });
 
 // ==========================================================================
@@ -658,9 +676,10 @@ function openDetailModal(match) {
   if (firstContent) firstContent.classList.add('active');
 
   loadOddsComparisonTables(match);
-  generateAiAnalysis(match);
 
   modal.style.display = 'flex';
+  const modalBody = modal.querySelector('.modal-body');
+  if (modalBody) modalBody.scrollTop = 0;
   lucide.createIcons();
 }
 
@@ -875,111 +894,7 @@ function renderTrendChart() {
   });
 }
 
-// ==========================================================================
-// 12. AI 分析（基于真实赔率数据，无数据则如实说明）
-// ==========================================================================
-function generateAiAnalysis(match) {
-  const setEmpty = () => {
-    document.getElementById('aiConfidenceBar').style.width = '0%';
-    document.getElementById('aiConfidenceText').innerText = '0%';
-    document.getElementById('aiMatchupText').innerText = '由于缺乏盘口赔率数据，暂无法生成量化分析。数据来源 The Odds API。';
-    document.getElementById('aiMarketText').innerText = '请配置有效的 API Key 并联网获取数据后，才能展示市场盘面分析。';
-    document.getElementById('aiVerdict1x2').innerText = '--';
-    document.getElementById('aiVerdictHandicap').innerText = '--';
-    document.getElementById('aiVerdictGoals').innerText = '--';
-  };
 
-  if (!match.odds || !match.odds.euro || !match.odds.euro.instant) { setEmpty(); return; }
-
-  const euro  = match.odds.euro;
-  const asian = match.odds.asian;
-  const ou    = match.odds.overUnder;
-
-  const rankDiff   = (match.away.rank || 50) - (match.home.rank || 50);
-  const strongTeam = rankDiff > 0 ? match.home : match.away;
-  const weakTeam   = rankDiff > 0 ? match.away : match.home;
-
-  let confidence = 60 + Math.min(25, Math.abs(rankDiff) * 0.4);
-
-  const instHome = euro.instant.home;
-  const instAway = euro.instant.away;
-  const initHome = euro.initial ? euro.initial.home : instHome;
-  const initAway = euro.initial ? euro.initial.away : instAway;
-
-  let marketTrend = '';
-  if (instHome < initHome && (initHome - instHome) > 0.08) {
-    marketTrend = `即时独赢赔率中，主队水位有明显下调（初盘 ${initHome.toFixed(2)} → 即时 ${instHome.toFixed(2)}）。庄家防范意图明显，大资金明显偏向 ${match.home.name} 独赢。`;
-    confidence += 3;
-  } else if (instAway < initAway && (initAway - instAway) > 0.08) {
-    marketTrend = `即时独赢赔率中，客队水位明显下挫（初盘 ${initAway.toFixed(2)} → 即时 ${instAway.toFixed(2)}）。盘面热度正在向 ${match.away.name} 倾斜，大资金入场防范客胜。`;
-    confidence += 3;
-  } else {
-    marketTrend = `目前两队独赢赔率相对平稳，主胜即时赔率为 ${instHome.toFixed(2)}，客胜为 ${instAway.toFixed(2)}。庄家平盘开出，赔率震荡在合理区间，热度分配较为均衡。`;
-  }
-
-  confidence = Math.min(95, Math.round(confidence));
-  document.getElementById('aiConfidenceBar').style.width = `${confidence}%`;
-  document.getElementById('aiConfidenceText').innerText = `${confidence}%`;
-
-  // 实力分析
-  let matchupText = '';
-  const homeRank = match.home.rank || '?';
-  const awayRank = match.away.rank || '?';
-  if (Math.abs(rankDiff) < 5) {
-    matchupText = `这是一场均势对决。主队 ${match.home.name}（FIFA排名第 ${homeRank}）与客队 ${match.away.name}（排名第 ${awayRank}）势均力敌。中立场地作战，临场状态将是关键变量。`;
-  } else {
-    matchupText = `${strongTeam.name}（FIFA排名 ${strongTeam.rank || '?'}）在实力配置上强于 ${weakTeam.name}（FIFA排名 ${weakTeam.rank || '?'}）。${weakTeam.name} 需立足防守、依靠反击，想要爆冷有一定难度。`;
-  }
-  document.getElementById('aiMatchupText').innerText = matchupText;
-
-  // 盘面分析
-  let marketText = marketTrend;
-  if (asian && asian.instant) {
-    const lineText = formatHandicapLine(asian.instant.line);
-    marketText += ` 亚洲盘口方面，机构开出${lineText}的即时盘口，主队水位 ${asian.instant.home.toFixed(2)}，客队水位 ${asian.instant.away.toFixed(2)}。`;
-  } else {
-    marketText += ' 亚洲让球盘口数据暂未获取到（API 需要 spreads market 权限）。';
-  }
-  document.getElementById('aiMarketText').innerText = marketText;
-
-  // 推荐
-  let verdict1x2 = '';
-  if (Math.abs(rankDiff) >= 15) {
-    verdict1x2 = `${rankDiff > 0 ? match.home.name : match.away.name} 胜`;
-  } else if (instHome < 2.10) {
-    verdict1x2 = `${match.home.name} 胜或防平`;
-  } else if (instAway < 2.10) {
-    verdict1x2 = `${match.away.name} 胜或防平`;
-  } else {
-    verdict1x2 = '首选平局 / 双选防冷';
-  }
-  document.getElementById('aiVerdict1x2').innerText = verdict1x2;
-
-  let verdictHandicap = '-- (暂无让球数据)';
-  if (asian && asian.instant) {
-    if (Math.abs(rankDiff) >= 15) {
-      const wt = rankDiff > 0 ? match.home.name : match.away.name;
-      verdictHandicap = Math.abs(asian.instant.line) >= 1.25
-        ? `${wt} (${asian.instant.line.toFixed(2)}) 胜/平博`
-        : `${wt} (让球胜)`;
-    } else {
-      verdictHandicap = instHome < 2.10
-        ? `${match.home.name} (${asian.instant.line.toFixed(2)}) 主队赢盘/不败`
-        : instAway < 2.10
-          ? `${match.away.name} (${(asian.instant.line * -1).toFixed(2)}) 客队赢盘/不败`
-          : '客队受让赢盘';
-    }
-  }
-  document.getElementById('aiVerdictHandicap').innerText = verdictHandicap;
-
-  let verdictGoals = '-- (暂无进球盘口)';
-  if (ou && ou.instant) {
-    verdictGoals = Math.abs(rankDiff) >= 15
-      ? (ou.instant.line >= 2.5 ? '大球 (2.5)' : '大球 (2.25)')
-      : '小球 (2.5)';
-  }
-  document.getElementById('aiVerdictGoals').innerText = verdictGoals;
-}
 
 // ==========================================================================
 // 13. API Key 管理

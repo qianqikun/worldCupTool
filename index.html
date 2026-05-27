@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>2026美加墨世界杯赛程及亚盘欧指数据查看系统</title>
   <!-- SEO Meta Tags -->
   <meta name="description" content="专业级2026年美加墨世界杯完整赛程表，支持实时查看各大主流博彩公司欧指、让球亚盘、大小球即时赔率与水位，独家提供24小时赔率走势图表及AI智能数据分析。">
@@ -247,7 +247,6 @@
         <div class="modal-tabs">
           <button class="tab-btn active" data-tab="odds-data">赔率数据对比</button>
           <button class="tab-btn" data-tab="trend-chart">24小时变化趋势</button>
-          <button class="tab-btn" data-tab="ai-analysis">AI 智能指数预测</button>
         </div>
 
         <!-- 标签内容 1: 赔率数据对比 -->
@@ -342,52 +341,7 @@
           </div>
         </div>
 
-        <!-- 标签内容 3: AI 智能指数预测 -->
-        <div class="tab-content" id="tab-ai-analysis">
-          <div class="ai-report-container">
-            <div class="ai-header">
-              <div class="ai-badge">
-                <i class="ai-icon animate-pulse" data-lucide="sparkles"></i>
-                <span>DeepMind AI 模拟分析</span>
-              </div>
-              <div class="confidence-meter">
-                <span>预测信心值：</span>
-                <div class="bar-bg"><div class="bar-fill" id="aiConfidenceBar" style="width: 75%;"></div></div>
-                <span id="aiConfidenceText">75%</span>
-              </div>
-            </div>
-            
-            <div class="ai-body">
-              <div class="analysis-card card-matchup">
-                <h4><i data-lucide="shield-alert"></i> 实力与交锋分析</h4>
-                <p id="aiMatchupText">分析加载中...</p>
-              </div>
-              
-              <div class="analysis-card card-market">
-                <h4><i data-lucide="trending-up"></i> 赔率与市场盘面分析</h4>
-                <p id="aiMarketText">盘口数据计算中...</p>
-              </div>
 
-              <div class="analysis-card card-verdict">
-                <h4><i data-lucide="check-circle-2"></i> 赛果推荐与让球解析</h4>
-                <div class="verdict-grid">
-                  <div class="verdict-item">
-                    <span class="label">独赢方向</span>
-                    <span class="val highlight" id="aiVerdict1x2">阿根廷 胜</span>
-                  </div>
-                  <div class="verdict-item">
-                    <span class="label">盘口推荐</span>
-                    <span class="val highlight" id="aiVerdictHandicap">阿根廷 (-0.75) 输半赢全</span>
-                  </div>
-                  <div class="verdict-item">
-                    <span class="label">进球预测</span>
-                    <span class="val highlight" id="aiVerdictGoals">大球 (2.5)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>
