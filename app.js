@@ -410,9 +410,9 @@ function bindEvents() {
       btn.classList.add('active');
       const targetTabId = btn.dataset.tab;
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      const targetContent = document.getElementById(targetTabId);
+      const targetContent = document.getElementById('tab-' + targetTabId);
       if (targetContent) targetContent.classList.add('active');
-      if (targetTabId === 'tab-trend-chart') renderTrendChart();
+      if (targetTabId === 'trend-chart') renderTrendChart();
     });
   });
 
