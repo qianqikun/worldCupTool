@@ -979,6 +979,35 @@ function testApiKey() {
     });
 }
 
+/** 根据 API 比赛的开赛时间和参赛球队，匹配官方真实的场馆 */
+function findOfficialMatch(apiMatch, homeTeamId, awayTeamId) {
+  if (typeof OFFICIAL_SCHEDULE === 'undefined') return null;
+
+  const apiTimeStr = apiMatch.commence_time; // UTC ISO 字符串，如 "2026-06-11T19:00:00Z"
+  const apiUtcMs = new Date(apiTimeStr).getTime();
+
+  // 查找在开赛时间上下 15 分钟之内的官方候选比赛
+  const candidates = OFFICIAL_SCHEDULE.filter(s => {
+    const sUtcMs = new Date(s.time).getTime();
+    return Math.abs(sUtcMs - apiUtcMs) < 15 * 60 * 1000;
+  });
+
+  if (candidates.length === 0) {
+    return null;
+  }
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  // 如果有多场比赛同时开赛（如小组赛最后一轮），则通过队伍 ID 进行匹配
+  const matched = candidates.find(s => {
+    return (s.team1 === homeTeamId && s.team2 === awayTeamId) ||
+           (s.team1 === awayTeamId && s.team2 === homeTeamId);
+  });
+
+  return matched || candidates[0];
+}
+
 // ==========================================================================
 // 14. 核心 API 拉取逻辑（严格不编造数据）
 // ==========================================================================
@@ -1027,8 +1056,10 @@ function fetchRealOddsData() {
           group = null;
         }
 
-        // 分配场馆（按顺序循环）
-        const stadium = STADIUMS[seqId % STADIUMS.length];
+        // 匹配官方真实场馆，若无匹配则使用轮询兜底
+        const matchedOfficial = findOfficialMatch(apiMatch, homeTeam.id, awayTeam.id);
+        const stadiumName = matchedOfficial ? matchedOfficial.stadium : STADIUMS[seqId % STADIUMS.length].name;
+        const cityName = matchedOfficial ? matchedOfficial.city : STADIUMS[seqId % STADIUMS.length].city;
 
         // ---- 解析赔率（严格使用 API 真实数据）----
         let odds = null;
@@ -1146,8 +1177,8 @@ function fetchRealOddsData() {
           home:       homeTeam,
           away:       awayTeam,
           time:       apiMatch.commence_time,
-          stadium:    stadium.name,
-          city:       stadium.city,
+          stadium:    stadiumName,
+          city:       cityName,
           status,
           homeScore:  null,   // API 基础版不含比分，留空
           awayScore:  null,
